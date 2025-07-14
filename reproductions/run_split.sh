@@ -1,6 +1,6 @@
 #!/bin/bash
 
-conda activate rl4rs
+#conda activate rl4rs
 script_abs=$(readlink -f "$0")
 rl4rs_benchmark_dir=$(dirname $script_abs)/..
 rl4rs_dataset_dir=${rl4rs_benchmark_dir}/dataset
