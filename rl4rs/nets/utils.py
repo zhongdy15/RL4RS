@@ -117,10 +117,35 @@ def sequence_input_attn(input, config):
     for i in range(seq_num):
         seq_i = seq_index_layer([sequence_feature_input, i])
         seq_i_embeddings = emb_layer(seq_i)
-        rnn_outputs = DynamicGRU(emb_size, return_sequence=True)([seq_i_embeddings, sequence_length])
-        scores = AttentionSequencePoolingLayer(att_hidden_units=(64, 16), return_score=True)([
+
+        # --- 关键部分：根据你发现的命名规律动态生成层名 ---
+        if i == 0:
+            # i=0 时的特殊命名
+            rnn_layer_name = "dynamic_gru"
+            attn_layer_name = "attention_sequence_pooling_layer"
+            permute_layer_name = "permute"  # Permute 层也可能有类似规则，先假设是这样
+            augru_layer_name = "dynamic_gru_1"
+        else:
+            # i > 0 时的通用命名规则
+            # 注意这里的数字可能需要根据你的发现微调
+            # 第一个 GRU: i=1 -> _2, i=2 -> _4, i=3 -> _6 ... (似乎是 2*i)
+            rnn_layer_name = f"dynamic_gru_{2 * i}"
+
+            # Attention 层: i=1 -> _1, i=2 -> _2, ... (似乎是 i)
+            # 注意，Keras 可能会把 attention_sequence_pooling_layer 变成 attention_sequence_pooling_layer_1
+            # 所以这里的命名可能是 attention_sequence_pooling_layer_{i}
+            attn_layer_name = f"attention_sequence_pooling_layer_{i}"
+
+            # Permute 层: i=1 -> _1, ... (似乎是 i)
+            permute_layer_name = f"permute_{i}"
+
+            # 第二个 GRU: i=1 -> _3, i=2 -> _5, ... (似乎是 2*i + 1)
+            augru_layer_name = f"dynamic_gru_{2 * i + 1}"
+
+        rnn_outputs = DynamicGRU(emb_size, return_sequence=True, name=rnn_layer_name)([seq_i_embeddings, sequence_length])
+        scores = AttentionSequencePoolingLayer(att_hidden_units=(64, 16), return_score=True, name=attn_layer_name)([
             id_slate_pooling, rnn_outputs, sequence_length])
-        final_state2 = DynamicGRU(emb_size * 2, gru_type='AUGRU', return_sequence=False
+        final_state2 = DynamicGRU(emb_size * 2, gru_type='AUGRU', return_sequence=False, name=augru_layer_name
                                   )([rnn_outputs, sequence_length, tf.keras.layers.Permute([2, 1])(scores)])
         seqs_attn.append(final_state2)
 
