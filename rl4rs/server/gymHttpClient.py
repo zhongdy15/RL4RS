@@ -152,23 +152,63 @@ class ServerError(Exception):
             self.status_code = status_code
 
 
+# if __name__ == '__main__':
+#     remote_base = 'http://127.0.0.1:5000'
+#     client = Client(remote_base)
+#
+#     # Create environment
+#     env_id = 'CartPole-v0'
+#     instance_id = client.env_create(env_id)
+#     print(instance_id)
+#     # Check properties
+#     all_envs = client.env_list_all()
+#     action_info = client.env_action_space_info(instance_id)
+#     obs_info = client.env_observation_space_info(instance_id)
+#     print(obs_info)
+#     # Run a single step
+#     client.env_monitor_start(instance_id, directory='tmp', force=True)
+#     init_obs = client.env_reset(instance_id)
+#     [observation, reward, done, info] = client.env_step(instance_id, 1, False)
+#     client.env_monitor_close(instance_id)
+#     print(observation, reward, done, info)
+    # client.upload(training_dir='tmp')
 if __name__ == '__main__':
     remote_base = 'http://127.0.0.1:5000'
     client = Client(remote_base)
 
-    # Create environment
-    env_id = 'CartPole-v0'
-    instance_id = client.env_create(env_id)
-    print(instance_id)
-    # Check properties
-    all_envs = client.env_list_all()
-    action_info = client.env_action_space_info(instance_id)
-    obs_info = client.env_observation_space_info(instance_id)
-    print(obs_info)
-    # Run a single step
-    client.env_monitor_start(instance_id, directory='tmp', force=True)
-    init_obs = client.env_reset(instance_id)
-    [observation, reward, done, info] = client.env_step(instance_id, 1, False)
-    client.env_monitor_close(instance_id)
-    print(observation, reward, done, info)
-    # client.upload(training_dir='tmp')
+    try:
+        # Create environment
+        env_id = 'CartPole-v0'
+        instance_id = client.env_create(env_id)
+        print("Instance ID:", instance_id) # 确认实例ID是否成功返回
+
+        # Check properties
+        all_envs = client.env_list_all()
+        print("All active environments:", all_envs) # 检查当前所有活跃的env
+
+        action_info = client.env_action_space_info(instance_id)
+        print("Action Space Info:", action_info)
+
+        obs_info = client.env_observation_space_info(instance_id)
+        print("Observation Space Info:", obs_info)
+
+        # Run a single step
+        client.env_monitor_start(instance_id, directory='tmp', force=True)
+        init_obs = client.env_reset(instance_id)
+        print("Initial Observation:", init_obs)
+
+        [observation, reward, done, info] = client.env_step(instance_id, 1, False)
+        client.env_monitor_close(instance_id)
+        print("Step Result: Obs=", observation, "Reward=", reward, "Done=", done, "Info=", info)
+        # client.upload(training_dir='tmp')
+
+    except ServerError as e:
+        print(f"Server Error occurred!")
+        print(f"Status Code: {e.status_code}")
+        print(f"Message: {e.message}")
+    except requests.exceptions.ConnectionError as e:
+        print(f"Connection Error: Could not connect to the server at {remote_base}. Is the server running?")
+        print(e)
+    except Exception as e:
+        print(f"An unexpected error occurred: {type(e).__name__} - {e}")
+
